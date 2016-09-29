@@ -94,7 +94,9 @@ K = 100 * [1, 1];
 addpath("../../bvp1d");
 grid_info = get_grid_info(L, K);
 data.g = zeros(N, grid_info.nodes);
-guess = zeros(N, grid_info.nodes);
+guess = [ boundary(1).thetab + ...
+  (boundary(2).thetab - boundary(1).thetab) * (0 : (grid_info.nodes - 1)) / ...
+  (grid_info.nodes - 1) ; zeros(1, grid_info.nodes) ];
 tol = 1e-6;
 sol = solve_bvp1d(grid_info, data, guess, tol);
 theta = sol(1, :);
