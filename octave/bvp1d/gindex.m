@@ -5,5 +5,5 @@
 # N -- number of equations, M -- number of subdomains
 # K(j) -- number of grid nodes in the j-th subdomain
 function ret = gindex (grid_info, j, n)
-  ret = grid_info.cum_index(j) + n + 1;
+  ret = grid_info.first_index(j) + n;
 endfunction

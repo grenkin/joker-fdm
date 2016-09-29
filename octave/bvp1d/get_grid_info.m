@@ -8,9 +8,8 @@ function grid_info = get_grid_info (L, K)
   grid_info.K = K;
   grid_info.h = L ./ K;  # step size
   grid_info.nodes = sum(K + 1);  # total number of grid nodes
-
-  # Calculate the number of nodes in the previous subdomains (for func gindex)
+  # Calculate the first node index in each subdomain
   v = shift(cumsum(K + 1), 1);
   v(1) = 0;
-  grid_info.cum_index = v;
+  grid_info.first_index = v + 1;
 endfunction

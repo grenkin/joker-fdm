@@ -105,7 +105,9 @@ sol1 = solve_bvp1d(grid_info, data, guess, tol);
 theta1 = sol1(1, :);
 phi1 = sol1(2, :);
 
-xgrid = [(0 : K(1)) * grid_info.h(1), L(1) + (0 : K(2)) * grid_info.h(2)];
+xgrid1 = (0 : K(1)) * grid_info.h(1);
+xgrid2 = L(1) + (0 : K(2)) * grid_info.h(2);
+xgrid = [xgrid1, xgrid2];
 figure
 plot(xgrid, theta, "r", "linewidth", 2, ...
   xgrid, theta1, "color", [0 .6 0], "linewidth", 2);
@@ -113,7 +115,8 @@ xlabel("x");
 ylabel("theta");
 
 figure
-plot(xgrid, phi, "r", "linewidth", 2, ...
+plot(xgrid1, phi(1 : (grid_info.K(1) + 1)), "r", "linewidth", 2, ...
+  xgrid2, phi(grid_info.first_index(2) : grid_info.nodes), "r", "linewidth", 2, ...
   xgrid, phi1, "color", [0 .6 0], "linewidth", 2);
 xlabel("x");
 ylabel("phi");
