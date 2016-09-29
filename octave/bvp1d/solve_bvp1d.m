@@ -179,7 +179,7 @@ function [coeff, rhs] = get_eq_interface_left (grid_info, data, guess, i, j, n)
   [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
 endfunction
 
-# Get the linearized nonlinear term \sum_k( f_{ijk}(u_{kjn}) ) - g_{ijn}
+# Get the linearized nonlinear term \sum_k( f_{ijk}(u_{kjn}) ) = g_{ijn}
 function [coeff, rhs] = get_nonlinear_term (grid_info, data, guess, i, j, n)
   N = data.N;
   unknowns = N * grid_info.nodes;
@@ -189,10 +189,10 @@ function [coeff, rhs] = get_nonlinear_term (grid_info, data, guess, i, j, n)
     ind = nindex(grid_info, k, j, n);
     coeff(ind) = data.df{i, j, k}( guess(k, gind) );
   endfor
-  rhs = - data.g(i, gind);
+  rhs = data.g(i, gind);
   for k = 1 : N
     rhs += data.df{i, j, k}( guess(k, gind) ) * guess(k, gind) ...
-    - data.f{i, j, k}( guess(k, gind) );
+      - data.f{i, j, k}( guess(k, gind) );
   endfor
 endfunction
 
