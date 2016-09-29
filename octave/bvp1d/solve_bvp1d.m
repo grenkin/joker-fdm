@@ -10,6 +10,7 @@
 #   G -- coefficients in conjugation conditions
 # guess -- initial guess
 # tol -- tolerance in Newton's method
+# max_iter -- maximal number of Newton's method iterations
 
 # Returned value (sol) -- values of N grid functions at grid points
 # sol -- N x grid_info.nodes matrix
@@ -21,7 +22,7 @@
 # G -- N x (M - 1) matrix, G(i, j) >= 0 or G(i, j) == Inf
 # guess -- N x grid_info.nodes matrix
 
-function sol = solve_bvp1d (grid_info, data, guess, tol)
+function sol = solve_bvp1d (grid_info, data, guess, tol, max_iter = Inf)
   [N, M] = deal(data.N, data.M);
   unknowns = N * grid_info.nodes;
   A = sparse(unknowns, unknowns);
@@ -45,7 +46,7 @@ function sol = solve_bvp1d (grid_info, data, guess, tol)
     # Solve the linear system
     x = A \ rhs;
     sol = transpose(reshape(x, grid_info.nodes, N));
-  until (max(sol(:) - sol_old(:)) < tol)
+  until (max(sol(:) - sol_old(:)) < tol || iter == max_iter)
   printf("\n");
 endfunction
 
