@@ -24,7 +24,6 @@
 function sol = solve_bvp1d (grid_info, data, guess, tol)
   [N, M] = deal(data.N, data.M);
   unknowns = N * grid_info.nodes;
-  A = sparse(unknowns, unknowns);
   rhs = zeros(unknowns, 1);
   # Apply Newton's method for solving the nonlinear system
   iter = 0;
@@ -33,15 +32,21 @@ function sol = solve_bvp1d (grid_info, data, guess, tol)
     printf("%d ", ++iter);
     sol_old = sol;
     # Build the matrix and the right-hand side of the linear system
+    row_ind = col_ind = val = [];
     for i = 1 : N
       for j = 1 : M
         for n = 0 : grid_info.K(j)
-          ind = nindex(grid_info, i, j, n);
-          [A(ind, :), rhs(ind)] = ...
+          row_ind1 = nindex(grid_info, i, j, n);
+          [col_ind1, val1, rhs1] = ...
             get_fd_equation(grid_info, data, sol_old, i, j, n);
+          row_ind = [row_ind, row_ind1 * ones(1, length(col_ind1))];
+          col_ind = [col_ind, col_ind1];
+          val = [val, val1];
+          rhs(row_ind1) = rhs1;
         endfor
       endfor
     endfor
+    A = sparse(row_ind, col_ind, val, unknowns, unknowns);
     # Solve the linear system
     x = A \ rhs;
     sol = transpose(reshape(x, grid_info.nodes, N));
@@ -50,41 +55,39 @@ function sol = solve_bvp1d (grid_info, data, guess, tol)
 endfunction
 
 # Get FD equation in a given grid node
-function [coeff, rhs] = get_fd_equation (grid_info, data, guess, i, j, n)
+function [ind, coeff, rhs] = get_fd_equation (grid_info, data, guess, i, j, n)
   M = data.M;
   if (j == 1 && n == 0 || j == M && n == grid_info.K(j))
     # boundary node
-    [coeff, rhs] = get_eq_boundary(grid_info, data, guess, i, j, n);
+    [ind, coeff, rhs] = get_eq_boundary(grid_info, data, guess, i, j, n);
   elseif (n == grid_info.K(j))
     # right-most node of the j-th domain
-    [coeff, rhs] = get_eq_interface_right(grid_info, data, guess, i, j, n);
+    [ind, coeff, rhs] = get_eq_interface_right(grid_info, data, guess, i, j, n);
   elseif (n == 0)
     # left-most node of the j-th domain
-    [coeff, rhs] = get_eq_interface_left(grid_info, data, guess, i, j, n);
+    [ind, coeff, rhs] = get_eq_interface_left(grid_info, data, guess, i, j, n);
   else
     # internal node
-    [coeff, rhs] = get_eq_internal(grid_info, data, guess, i, j, n);
+    [ind, coeff, rhs] = get_eq_internal(grid_info, data, guess, i, j, n);
   endif
 endfunction
 
 # Get FD equation in an internal node
 # 0 < n < data.K(j)
-function [coeff, rhs] = get_eq_internal (grid_info, data, guess, i, j, n)
+function [ind, coeff, rhs] = get_eq_internal (grid_info, data, guess, i, j, n)
   N = data.N;
-  # [coeff1, rhs1] represents the differential operator
-  # [coeff2, rhs2] represents the nonlinear operator
-  unknowns = N * grid_info.nodes;
-  coeff1 = coeff2 = sparse(1, unknowns);
-  ind = arrayfun(@(nn) nindex(grid_info, i, j, nn), [n - 1, n, n + 1]);  # stencil
-  coeff1(ind) = - data.a(i, j) / grid_info.h(j) ^ 2 * [1, -2, 1];
+  # [ind1, coeff1, rhs1] represents the differential operator
+  # [ind2, coeff2, rhs2] represents the nonlinear operator
+  ind1 = arrayfun(@(nn) nindex(grid_info, i, j, nn), [n - 1, n, n + 1]);  # stencil
+  coeff1 = - data.a(i, j) / grid_info.h(j) ^ 2 * [1, -2, 1];
   rhs1 = 0;
-  [coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
-  [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
+  [ind2, coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
+  [ind, coeff, rhs] = deal([ind1 ind2], [coeff1 coeff2], rhs1 + rhs2);
 endfunction
 
 # Get FD equation in a boundary node
 # (j == 1 and n == 0) or (j == M and n == grid_info.K(M))
-function [coeff, rhs] = get_eq_boundary (grid_info, data, guess, i, j, n)
+function [ind, coeff, rhs] = get_eq_boundary (grid_info, data, guess, i, j, n)
   [N, M] = deal(data.N, data.M);
   if (n == 0)
     # left boundary node
@@ -99,101 +102,90 @@ function [coeff, rhs] = get_eq_boundary (grid_info, data, guess, i, j, n)
     vval = data.v(i, 2);
   endif
 
-  # [coeff1, rhs1] represents the differential operator
-  # [coeff2, rhs2] represents the nonlinear operator
-  unknowns = N * grid_info.nodes;
-  coeff1 = coeff2 = sparse(1, unknowns);
+  # [ind1, coeff1, rhs1] represents the differential operator
+  # [ind2, coeff2, rhs2] represents the nonlinear operator
   if (bval == Inf)
     # Dirichlet BC
-    ind = nindex(grid_info, i, j, n);
-    coeff1(ind) = 1;
+    ind1 = [ nindex(grid_info, i, j, n) ];
+    coeff1 = [ 1 ];
     rhs1 = vval;
   else
     # Neumann or Robin BC
-    ind = arrayfun(@(nn) nindex(grid_info, i, j, nn), [n, n1]);  # stencil
-    coeff1(ind) = data.a(i, j) / grid_info.h(j) * [1, -1] + bval * [1, 0];
+    ind1 = arrayfun(@(nn) nindex(grid_info, i, j, nn), [n, n1]);  # stencil
+    coeff1 = data.a(i, j) / grid_info.h(j) * [1, -1] + bval * [1, 0];
     rhs1 = bval * vval;
   endif
-  [coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
+  [ind2, coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
   coeff2 *= grid_info.h(j) / 2;
   rhs2 *= grid_info.h(j) / 2;
-  [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
+  [ind, coeff, rhs] = deal([ind1 ind2], [coeff1 coeff2], rhs1 + rhs2);
 endfunction
 
 # Get FD equation in a right-most node of the j-th domain
 # (interface node from the left between domains j and j+1)
 # 1 <= j < M, n == grid_info.K(j)
-function [coeff, rhs] = get_eq_interface_right (grid_info, data, guess, i, j, n)
+function [ind, coeff, rhs] = get_eq_interface_right (grid_info, data, guess, i, j, n)
   N = data.N;
-  # [coeff1, rhs1] represents the differential operator
-  # [coeff2, rhs2] represents the nonlinear operator
-  unknowns = N * grid_info.nodes;
-  coeff1 = coeff2 = sparse(1, unknowns);
+  # [ind1, coeff1, rhs1] represents the differential operator
+  # [ind2, coeff2, rhs2] represents the nonlinear operator
   get_ind = @(jj, nn) nindex(grid_info, i, jj, nn);
   Gval = data.G(i, j);
   if (Gval == Inf)
-    ind = [get_ind(j, n), get_ind(j, n - 1), get_ind(j + 1, 0), get_ind(j + 1, 1)];  # stencil
-    coeff1(ind) = data.a(i, j) / grid_info.h(j) * [1, -1, 0, 0] + ...
+    ind1 = [get_ind(j, n), get_ind(j, n - 1), get_ind(j + 1, 0), get_ind(j + 1, 1)];  # stencil
+    coeff1 = data.a(i, j) / grid_info.h(j) * [1, -1, 0, 0] + ...
       data.a(i, j + 1) / grid_info.h(j + 1) * [0, 0, 1, -1];
     rhs1 = 0;
-    [coeff2a, rhs2a] = get_nonlinear_term(grid_info, data, guess, i, j, n);
-    [coeff2b, rhs2b] = get_nonlinear_term(grid_info, data, guess, i, j + 1, 0);
-    coeff2 = coeff2a * grid_info.h(j) / 2 + coeff2b * grid_info.h(j + 1) / 2;
+    [ind2a, coeff2a, rhs2a] = get_nonlinear_term(grid_info, data, guess, i, j, n);
+    [ind2b, coeff2b, rhs2b] = get_nonlinear_term(grid_info, data, guess, i, j + 1, 0);
+    ind2 = [ind2a, ind2b];
+    coeff2 = [coeff2a * grid_info.h(j) / 2, coeff2b * grid_info.h(j + 1) / 2];
     rhs2 = rhs2a * grid_info.h(j) / 2 + rhs2b * grid_info.h(j + 1) / 2;
   else
-    ind = [get_ind(j, n), get_ind(j, n - 1), get_ind(j + 1, 0)];  # stencil
-    coeff1(ind) = data.a(i, j) / grid_info.h(j) * [1, -1, 0] + Gval * [1, 0, -1];
+    ind1 = [get_ind(j, n), get_ind(j, n - 1), get_ind(j + 1, 0)];  # stencil
+    coeff1 = data.a(i, j) / grid_info.h(j) * [1, -1, 0] + Gval * [1, 0, -1];
     rhs1 = 0;
-    [coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
+    [ind2, coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
     coeff2 *= grid_info.h(j) / 2;
     rhs2 *= grid_info.h(j) / 2;
   endif
-  [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
+  [ind, coeff, rhs] = deal([ind1 ind2], [coeff1 coeff2], rhs1 + rhs2);
 endfunction
 
 # Get FD equation in a left-most node of the j-th domain
 # (interface node from the right between domains j-1 and j)
 # 1 < j <= M, n == 0
-function [coeff, rhs] = get_eq_interface_left (grid_info, data, guess, i, j, n)
+function [ind, coeff, rhs] = get_eq_interface_left (grid_info, data, guess, i, j, n)
   N = data.N;
-  # [coeff1, rhs1] represents the differential operator
-  # [coeff2, rhs2] represents the nonlinear operator
-  unknowns = N * grid_info.nodes;
-  coeff1 = coeff2 = sparse(1, unknowns);
+  # [ind1, coeff1, rhs1] represents the differential operator
+  # [ind2, coeff2, rhs2] represents the nonlinear operator
   get_ind = @(jj, nn) nindex(grid_info, i, jj, nn);
   Gval = data.G(i, j - 1);
   if (Gval == Inf)
-    ind = [get_ind(j, n), get_ind(j - 1, grid_info.K(j - 1))];  # stencil
-    coeff1(ind) = [1, -1];
+    ind1 = [get_ind(j, n), get_ind(j - 1, grid_info.K(j - 1))];  # stencil
+    coeff1 = [1, -1];
     rhs1 = 0;
-    # coeff2 == 0
+    ind2 = coeff2 = [];
     rhs2 = 0;
   else
-    ind = [get_ind(j, n), get_ind(j, n + 1), get_ind(j - 1, grid_info.K(j - 1))];  # stencil
-    coeff1(ind) = data.a(i, j) / grid_info.h(j) * [1, -1, 0] + Gval * [1, 0, -1];
+    ind1 = [get_ind(j, n), get_ind(j, n + 1), get_ind(j - 1, grid_info.K(j - 1))];  # stencil
+    coeff1 = data.a(i, j) / grid_info.h(j) * [1, -1, 0] + Gval * [1, 0, -1];
     rhs1 = 0;
-    [coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
+    [ind2, coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
     coeff2 *= grid_info.h(j) / 2;
     rhs2 *= grid_info.h(j) / 2;
   endif
-  [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
+  [ind, coeff, rhs] = deal([ind1 ind2], [coeff1 coeff2], rhs1 + rhs2);
 endfunction
 
 # Get the linearized nonlinear term \sum_k( f_{ijk}(u_{kjn}) ) = g_{ijn}
-function [coeff, rhs] = get_nonlinear_term (grid_info, data, guess, i, j, n)
+function [ind, coeff, rhs] = get_nonlinear_term (grid_info, data, guess, i, j, n)
   N = data.N;
-  unknowns = N * grid_info.nodes;
-  coeff = sparse(1, unknowns);
   gind = gindex(grid_info, j, n);
-  for k = 1 : N
-    ind = nindex(grid_info, k, j, n);
-    coeff(ind) = data.df{i, j, k}( guess(k, gind) );
-  endfor
-  rhs = data.g(i, gind);
-  for k = 1 : N
-    rhs += data.df{i, j, k}( guess(k, gind) ) * guess(k, gind) ...
-      - data.f{i, j, k}( guess(k, gind) );
-  endfor
+  ind = arrayfun(@(k) nindex(grid_info, k, j, n), 1 : N);
+  coeff = arrayfun(@(k) data.df{i, j, k}( guess(k, gind) ), 1 : N);
+  rhs = data.g(i, gind) + sum(arrayfun( @(k) ( ...
+    data.df{i, j, k}( guess(k, gind) ) * guess(k, gind) ...
+    - data.f{i, j, k}( guess(k, gind) )  ), 1 : N));
 endfunction
 
 # Index of a grid node in a vector of unknowns
