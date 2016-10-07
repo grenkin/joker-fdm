@@ -4,7 +4,7 @@
 # data -- structure with fields:
 #   N -- number of equations, M -- number of subdomains
 #   a -- diffusion coefficients
-#   f -- nonlinear terms functions, df -- derivatives of f,
+#   f -- nonlinear terms functions, df -- derivatives of f
 #   g -- right-hand sides
 #   b -- coefficients in BCs, v -- functions values in BCs
 #   G -- coefficients in conjugation conditions
@@ -121,7 +121,7 @@ function [coeff, rhs] = get_eq_boundary (grid_info, data, guess, i, j, n)
   [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
 endfunction
 
-# Get FD equation in a right-most node of the j-th domain
+# Get FD equation in the right-most node of the j-th domain
 # (interface node from the left between domains j and j+1)
 # 1 <= j < M, n == grid_info.K(j)
 function [coeff, rhs] = get_eq_interface_right (grid_info, data, guess, i, j, n)
@@ -152,7 +152,7 @@ function [coeff, rhs] = get_eq_interface_right (grid_info, data, guess, i, j, n)
   [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
 endfunction
 
-# Get FD equation in a left-most node of the j-th domain
+# Get FD equation in the left-most node of the j-th domain
 # (interface node from the right between domains j-1 and j)
 # 1 < j <= M, n == 0
 function [coeff, rhs] = get_eq_interface_left (grid_info, data, guess, i, j, n)
@@ -180,21 +180,17 @@ function [coeff, rhs] = get_eq_interface_left (grid_info, data, guess, i, j, n)
   [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
 endfunction
 
-# Get the linearized nonlinear term \sum_k( f_{ijk}(u_{kjn}) ) = g_{ijn}
+# Get the linearized nonlinear term \sum_k{ f_{ijk}(u_{kjn}) } = g_{ijn}
 function [coeff, rhs] = get_nonlinear_term (grid_info, data, guess, i, j, n)
   N = data.N;
   unknowns = N * grid_info.nodes;
   coeff = sparse(1, unknowns);
   gind = gindex(grid_info, j, n);
-  for k = 1 : N
-    ind = nindex(grid_info, k, j, n);
-    coeff(ind) = data.df{i, j, k}( guess(k, gind) );
-  endfor
-  rhs = data.g(i, gind);
-  for k = 1 : N
-    rhs += data.df{i, j, k}( guess(k, gind) ) * guess(k, gind) ...
-      - data.f{i, j, k}( guess(k, gind) );
-  endfor
+  ind = arrayfun(@(k) nindex(grid_info, k, j, n), 1 : N);
+  coeff(ind) = arrayfun(@(k) data.df{i, j, k}( guess(k, gind) ), 1 : N);
+  rhs = data.g(i, gind) + sum(arrayfun( @(k) ( ...
+    data.df{i, j, k}( guess(k, gind) ) * guess(k, gind) ...
+    - data.f{i, j, k}( guess(k, gind) )  ), 1 : N));
 endfunction
 
 # Index of a grid node in a vector of unknowns
