@@ -109,15 +109,16 @@ function [coeff, rhs] = get_eq_boundary (grid_info, data, guess, i, j, n)
     ind = nindex(grid_info, i, j, n);
     coeff1(ind) = 1;
     rhs1 = vval;
+    rhs2 = 0;
   else
     # Neumann or Robin BC
     ind = arrayfun(@(nn) nindex(grid_info, i, j, nn), [n, n1]);  # stencil
     coeff1(ind) = data.a(i, j) / grid_info.h(j) * [1, -1] + bval * [1, 0];
     rhs1 = bval * vval;
+    [coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
+    coeff2 *= grid_info.h(j) / 2;
+    rhs2 *= grid_info.h(j) / 2;
   endif
-  [coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
-  coeff2 *= grid_info.h(j) / 2;
-  rhs2 *= grid_info.h(j) / 2;
   [coeff, rhs] = deal(coeff1 + coeff2, rhs1 + rhs2);
 endfunction
 
