@@ -5,6 +5,8 @@
 # length(L) == length(K) == M (number of subdomains)
 # L(j) > 0, K(j) is integer >= 2
 function grid_info = get_grid_info (L, K)
+  grid_info.M = length(L);
+  grid_info.L = L;
   grid_info.K = K;
   grid_info.h = L ./ K;  # step size
   grid_info.nodes = sum(K + 1);  # total number of grid nodes
