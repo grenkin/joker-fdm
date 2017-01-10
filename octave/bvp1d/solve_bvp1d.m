@@ -46,7 +46,7 @@ function sol = solve_bvp1d (grid_info, data, guess, tol, max_iter = Inf)
     # Solve the linear system
     x = A \ rhs;
     sol = transpose(reshape(x, grid_info.nodes, N));
-  until (max(sol(:) - sol_old(:)) < tol || iter == max_iter)
+  until (max(abs(sol(:) - sol_old(:))) < tol || iter >= max_iter)
   printf("\n");
 endfunction
 
