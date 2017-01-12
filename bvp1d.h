@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <array>
+#include <cstring>
 #include <cstddef>
 
 class Grid1D {
@@ -48,6 +49,12 @@ public:
         : grid(std::vector<double>(1, 0.0), std::vector<int>(1, 0))
     {
         v = NULL;
+    }
+    GridFunction1D (const GridFunction1D& gf)
+        : grid(gf.grid)
+    {
+        v = new double[grid.number_of_nodes];
+        memcpy(v, gf.v, grid.number_of_nodes * sizeof(double));
     }
     ~GridFunction1D ()
     {
