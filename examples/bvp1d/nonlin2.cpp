@@ -1,8 +1,8 @@
 /*
 A nonlinear problem in 1D
--u''(x) + u^2 = -2 + x^4 on (0, 1)
-u'(0) = 0, u(1) = 1
-Exact solution: u(x) = x ^ 2
+-u''(x) + u^4 = (x + 1)^2 + 1 / [4 * (x + 1)^(3/2)] on (0, 1)
+u(0) = 1, u(1) = sqrt(2)
+Exact solution: u(x) = sqrt(x + 1)
 */
 
 #include <iostream>
@@ -14,22 +14,22 @@ using namespace std;
 
 double gfun(double x)
 {
-    return -2 + pow(x, 4);
+    return pow(x + 1, 2) + 1 / (4 * pow(x + 1, 1.5));
 }
 
 double exact(double x)
 {
-    return x * x;
+    return sqrt(x + 1);
 }
 
 double f(double u)
 {
-    return u * u;
+    return pow(u, 4);
 }
 
 double df(double u)
 {
-    return 2 * u;
+    return 4 * pow(u, 3);
 }
 
 int main() {
@@ -42,8 +42,8 @@ int main() {
         Grid1D grid(L, K);
         Data1D data(1, grid);
         data.a[0][0] = 1;
-        data.b[0][0] = 0;  data.w[0][0] = 0;
-        data.b[0][1] = INFINITY;  data.w[0][1] = 1;
+        data.b[0][0] = INFINITY;  data.w[0][0] = 1;
+        data.b[0][1] = INFINITY;  data.w[0][1] = sqrt(2);
         data.f[0][0][0] = f;  data.df[0][0][0] = df;
         vector<GridFunction1D> sol(1);
         sol[0].set_grid(grid);
