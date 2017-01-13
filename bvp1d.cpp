@@ -25,28 +25,28 @@ VarExpr DifferenceOperator1D (const Data1D& data, int i, int j, int n)
     if (j == 0 && n == 0 || j == M - 1 && n == data.grid.K[j]) {
         // boundary node
         int n1;
-        double b0, v0;
+        double b0, w0;
         if (n == 0) {
             // left boundary node
             n1 = n + 1;
             b0 = data.b[i][0];
-            v0 = data.v[i][0];
+            w0 = data.w[i][0];
         }
         else {  // n == data.grid.K[M - 1]
             // right boundary node
             n1 = n - 1;
             b0 = data.b[i][1];
-            v0 = data.v[i][1];
+            w0 = data.w[i][1];
         }
         if (std::isinf(b0)) {
             // Dirichlet BC
-            return U(data, i, j, n) - v0;
+            return U(data, i, j, n) - w0;
         }
         else {
             // Neumann or Robin BC
             return data.a[i][j] / data.grid.h[j] *
                     (U(data, i, j, n) - U(data, i, j, n1))
-                + b0 * U(data, i, j, n) - b0 * v0;
+                + b0 * U(data, i, j, n) - w0;
         }
     }
     else if (n == data.grid.K[j]) {

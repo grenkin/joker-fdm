@@ -36,7 +36,7 @@ function [grid_info, theta, phi] = trilayer_calc (layer_data, boundary_data, ref
     endfor
   endfor
   data.b = [ Inf, Inf ; [boundary(:).tilde_gamma] ];
-  data.v = [ [boundary(:).thetab] ; [boundary(:).thetab] .^ 4 ];
+  data.w = [ [boundary(:).thetab] ; [boundary(:).tilde_gamma] .* [boundary(:).thetab] .^ 4 ];
   if (refraction)
     for j = 1 : M - 1
       G_val(j) = calc_G(layer_data(j).n, layer_data(j + 1).n);

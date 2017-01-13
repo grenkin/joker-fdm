@@ -12,7 +12,7 @@ data.M = M = 1;
 data.a = 1;
 data.f = data.df = {@(x) 0};
 data.b = [1, 1];
-data.v = [0, 0];
+data.w = [0, 0];
 data.G = [];
 L = pi;
 

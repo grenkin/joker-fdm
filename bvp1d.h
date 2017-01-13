@@ -87,7 +87,7 @@ struct Data1D {
     int N;  // number of equations
     std::vector<std::vector<double> > a;  // diffusion coefficients
     std::vector<std::vector<double> > G;  // coefficients in conjugation conditions
-    std::vector<std::array<double, 2> > b, v;  // coefficients in boundary conditions
+    std::vector<std::array<double, 2> > b, w;  // coefficients in boundary conditions
     std::vector<std::vector<std::vector<NonlinearFunction> > > f, df;  // nonlinear terms functions
     std::vector<GridFunction1D> g;  // right-hand sides
     Data1D (int _N, const Grid1D& _grid)
@@ -100,7 +100,7 @@ struct Data1D {
             a[i].resize(M);
             G[i].resize(M - 1);
             b.resize(N);
-            v.resize(N);
+            w.resize(N);
         }
         f.resize(N);
         for (int i = 0; i < N; ++i) {

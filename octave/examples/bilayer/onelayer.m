@@ -72,7 +72,7 @@ for j = 1 : M
 endfor
 
 data.b = [ Inf, Inf ; [boundary(:).tilde_gamma] ];
-data.v = [ [boundary(:).thetab] ; [boundary(:).thetab] .^ 4 ];
+data.w = [ [boundary(:).thetab] ; [boundary(:).tilde_gamma] .* [boundary(:).thetab] .^ 4 ];
 
 data.G = [ ];
 

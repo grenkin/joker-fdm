@@ -37,8 +37,8 @@ int main() {
         Grid1D grid(L, K);
         Data1D data(1, grid);
         data.a[0][0] = 1;
-        data.b[0][0] = 1;  data.v[0][0] = -1;
-        data.b[0][1] = 1;  data.v[0][1] = -1;
+        data.b[0][0] = 1;  data.w[0][0] = -1;
+        data.b[0][1] = 1;  data.w[0][1] = -1;
         data.f[0][0][0] = data.df[0][0][0] = zero;
         vector<GridFunction1D> sol(1);
         sol[0].set_grid(grid);

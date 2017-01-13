@@ -6,4 +6,3 @@ function func_layers = get_func_layers (grid_info, func)
     Lcum += grid_info.L(j);
   endfor
 endfunction
-

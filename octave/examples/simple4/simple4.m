@@ -12,7 +12,7 @@ data.M = M = 2;
 data.a = [1, 2];
 data.f = data.df = {@(x) 0, @(x) 0};
 data.b = [Inf, 1];
-data.v = [0, 11];
+data.w = [0, 11];
 data.G = Inf;
 L = [1, 2];
 Ltot = sum(L);

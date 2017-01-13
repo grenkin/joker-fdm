@@ -41,8 +41,8 @@ int main() {
         Grid1D grid(L, K);
         Data1D data(1, grid);
         data.a[0][0] = 1;  data.a[0][1] = 2;
-        data.b[0][0] = INFINITY;  data.v[0][0] = 0;
-        data.b[0][1] = 1;  data.v[0][1] = 11;
+        data.b[0][0] = INFINITY;  data.w[0][0] = 0;
+        data.b[0][1] = 1;  data.w[0][1] = 11;
         data.G[0][0] = INFINITY;
         data.f[0][0][0] = data.df[0][0][0] = zero;
         data.f[0][1][0] = data.df[0][1][0] = zero;

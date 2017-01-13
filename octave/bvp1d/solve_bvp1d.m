@@ -6,7 +6,7 @@
 #   a -- diffusion coefficients
 #   f -- nonlinear terms functions, df -- derivatives of f
 #   g -- right-hand sides
-#   b -- coefficients in BCs, v -- functions values in BCs
+#   b -- coefficients in BCs, w -- right-hand sides in BCs
 #   G -- coefficients in conjugation conditions
 # guess -- initial guess
 # tol -- tolerance in Newton's method
@@ -18,7 +18,7 @@
 # a -- N x M matrix, a(i, j) > 0
 # f, df -- N x M x N cell matrices of function handles
 # g -- N x grid_info.nodes matrix
-# b, v -- N x 2 matrices, b(i, j) >= 0 or b(i, j) == Inf
+# b, w -- N x 2 matrices, b(i, j) >= 0 or b(i, j) == Inf
 # G -- N x (M - 1) matrix, G(i, j) >= 0 or G(i, j) == Inf
 # guess -- N x grid_info.nodes matrix
 
@@ -91,13 +91,13 @@ function [coeff, rhs] = get_eq_boundary (grid_info, data, guess, i, j, n)
     # left boundary node
     n1 = n + 1;
     bval = data.b(i, 1);
-    vval = data.v(i, 1);
+    wval = data.w(i, 1);
   else
     # right boundary node
     # n == grid_info.K(M)
     n1 = n - 1;
     bval = data.b(i, 2);
-    vval = data.v(i, 2);
+    wval = data.w(i, 2);
   endif
 
   # [coeff1, rhs1] represents the differential operator
@@ -108,13 +108,13 @@ function [coeff, rhs] = get_eq_boundary (grid_info, data, guess, i, j, n)
     # Dirichlet BC
     ind = nindex(grid_info, i, j, n);
     coeff1(ind) = 1;
-    rhs1 = vval;
+    rhs1 = wval;
     rhs2 = 0;
   else
     # Neumann or Robin BC
     ind = arrayfun(@(nn) nindex(grid_info, i, j, nn), [n, n1]);  # stencil
     coeff1(ind) = data.a(i, j) / grid_info.h(j) * [1, -1] + bval * [1, 0];
-    rhs1 = bval * vval;
+    rhs1 = wval;
     [coeff2, rhs2] = get_nonlinear_term(grid_info, data, guess, i, j, n);
     coeff2 *= grid_info.h(j) / 2;
     rhs2 *= grid_info.h(j) / 2;

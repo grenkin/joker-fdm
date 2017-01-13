@@ -26,6 +26,8 @@
 
 [Подробная информация в wiki](https://github.com/grenkin/joker-fdm/wiki)
 
+[Здесь](https://groups.google.com/d/forum/joker-fdm) вы можете задать вопросы по программе.
+
 ---
 
 #### Версия 0.1
@@ -35,9 +37,9 @@
 
 $-a_{ij} u_i''(x) + \sum\limits_{k=1}^N f_{ijk}(u_k(x)) = g_{ij}(x)$ в $(x_{j-1}, x_j)$, $i=\overline{1,N}, j=\overline{1,M}$,
 
-$-a_{i1}u_i'(x_0) + b_{i0}u_i(x_0) = b_{i0}v_{i0}$, $i=\overline{1,N}$,
+$-a_{i1}u_i'(x_0) + b_{i0}u_i(x_0) = w_{i0}$, $i=\overline{1,N}$,
 
-$a_{iM}u_i'(x_M) + b_{iM}u_i(x_M) = b_{iM}v_{iM}$, $i=\overline{1,N}$
+$a_{iM}u_i'(x_M) + b_{iM}u_i(x_M) = w_{iM}$, $i=\overline{1,N}$
 
 с условиями сопряжения
 

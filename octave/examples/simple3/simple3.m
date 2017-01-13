@@ -12,7 +12,7 @@ data.M = M = 1;
 data.a = 1;
 data.f = data.df = {@(x) 0};
 data.b = [Inf, 2];
-data.v = [0, 2];
+data.w = [0, 4];
 data.G = [];
 L = 1;
 
