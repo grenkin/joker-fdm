@@ -50,6 +50,11 @@ public:
     {
         v = NULL;
     }
+    GridFunction1D (const Grid1D& _grid)
+        : grid(_grid)
+    {
+		v = new double[grid.number_of_nodes];
+    }
     GridFunction1D (const GridFunction1D& gf)
         : grid(gf.grid)
     {

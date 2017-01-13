@@ -33,7 +33,7 @@
 Решение (одномерных) краевых задач для систем ОДУ 2-го порядка
 следующего вида:
 
-$-a_{ij} u_i''(x) + \sum\limits_{k=1}^N f_{ijk}(u_k(x)) = g_{ij}$ в $(x_{j-1}, x_j)$, $i=\overline{1,N}, j=\overline{1,M}$,
+$-a_{ij} u_i''(x) + \sum\limits_{k=1}^N f_{ijk}(u_k(x)) = g_{ij}(x)$ в $(x_{j-1}, x_j)$, $i=\overline{1,N}, j=\overline{1,M}$,
 
 $-a_{i1}u_i'(x_0) + b_{i0}u_i(x_0) = b_{i0}v_{i0}$, $i=\overline{1,N}$,
 
