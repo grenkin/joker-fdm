@@ -29,7 +29,7 @@ for test = 0 : 5
   guess = zeros(1, grid_info.nodes);
   sol = solve_bvp1d(grid_info, data, guess, 1e-8, 1);
   sol_exact = arrayfun(uexact, xgrid);
-  rms = meansq(sol .- sol_exact);
+  rms = sqrt(meansq(sol .- sol_exact));
   printf("h = %e, %e\n", grid_info.h);
   printf("rms = %e\n", rms);
   if (test > 0)
