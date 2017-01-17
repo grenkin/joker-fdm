@@ -51,7 +51,7 @@ int main() {
             data.g[0](0, n) = gfun(grid.coord(0, n));
             sol[0](0, n) = 0;
         }
-        SolveBVP1D(data, Parameters(), sol);
+        SolveBVP1D(data, Parameters1D(), sol);
         double rms = 0;
         for (int n = 0; n <= K0; ++n)
             rms += pow(sol[0](0, n) - exact(grid.coord(0, n)), 2);

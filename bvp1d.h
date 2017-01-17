@@ -115,10 +115,10 @@ struct Data1D {
     }
 };
 
-struct Parameters {
+struct Parameters1D {
     double Newton_tol, linear_sys_tol;
     int max_Newton_iterations, max_linear_sys_iterations;
-    Parameters ()
+    Parameters1D ()
     {
         Newton_tol = 1e-8;  // absolute error in Newton's method
         max_Newton_iterations = 100;  // maximal number of iterations of Newton's method
@@ -127,7 +127,7 @@ struct Parameters {
     }
 };
 
-void SolveBVP1D (const Data1D&, const Parameters&,
+void SolveBVP1D (const Data1D&, const Parameters1D&,
     std::vector<GridFunction1D>&);
 
 #endif // BVP_1D_H_INCLUDED

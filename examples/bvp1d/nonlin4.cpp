@@ -72,7 +72,7 @@ int main() {
                 sol[0](j, n) = 0;
             }
         }
-        SolveBVP1D(data, Parameters(), sol);
+        SolveBVP1D(data, Parameters1D(), sol);
         double rms = 0;
         for (int j = 0; j < 2; ++j) {
             for (int n = 0; n <= K0; ++n)

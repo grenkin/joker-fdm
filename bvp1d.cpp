@@ -157,13 +157,13 @@ VarExpr NonlinearOperator1D (const Data1D& data, int i, int j, int n,
     }
 }
 
-void SolveBVP1D (const Data1D& data, const Parameters& param,
+void SolveBVP1D (const Data1D& data, const Parameters1D& param,
     std::vector<GridFunction1D>& sol)
 {
     int unknowns = data.N * data.grid.number_of_nodes;
     mtl::compressed2D<double> A(unknowns, unknowns);
     mtl::dense_vector<double> b(unknowns), x(unknowns), x_old(unknowns);
-    int elements_per_row = 3 + data.N;  // parameter of the inserter
+    int elements_per_row = 2 + data.N;  // parameter of the inserter
     // Set the initial guess
     for (int i = 0; i < data.N; ++i) {
         for (int j = 0; j < data.grid.M; ++j) {

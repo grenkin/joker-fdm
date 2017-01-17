@@ -46,7 +46,7 @@ int main() {
             data.g[0](0, n) = gfun(grid.coord(0, n));
             sol[0](0, n) = 0;
         }
-        Parameters param;
+        Parameters1D param;
         param.max_Newton_iterations = 1;
         SolveBVP1D(data, param, sol);
         double rms = 0;

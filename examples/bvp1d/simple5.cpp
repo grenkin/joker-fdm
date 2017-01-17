@@ -56,7 +56,7 @@ int main() {
                 sol[0](j, n) = 0;
             }
         }
-        Parameters param;
+        Parameters1D param;
         param.max_Newton_iterations = 1;
         SolveBVP1D(data, param, sol);
         double rms = 0;
