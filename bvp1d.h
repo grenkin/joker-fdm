@@ -43,7 +43,7 @@ public:
 
 class GridFunction1D {
     Grid1D grid;
-    double *v;
+    double* v;
 public:
     GridFunction1D ()
         : grid(std::vector<double>(1, 0.0), std::vector<int>(1, 0))
@@ -96,11 +96,11 @@ struct Data1D {
         int M = grid.M;
         a.resize(N);
         G.resize(N);
+        b.resize(N);
+        w.resize(N);
         for (int i = 0; i < N; ++i) {
             a[i].resize(M);
             G[i].resize(M - 1);
-            b.resize(N);
-            w.resize(N);
         }
         f.resize(N);
         for (int i = 0; i < N; ++i) {
