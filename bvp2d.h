@@ -58,33 +58,20 @@ public:
 
 class GridFunction2D {
     Grid2D grid;
-    double* v;
+    std::vector<double> v;
 public:
     GridFunction2D ()
         : grid({std::vector<double>(1, 0.0), std::vector<double>(1, 0.0)},
-               {std::vector<int>(1, 0), std::vector<int>(1, 0)})
-    {
-        v = NULL;
-    }
+               {std::vector<int>(1, 0), std::vector<int>(1, 0)}) {}
     GridFunction2D (const Grid2D& _grid)
         : grid(_grid)
     {
-		v = new double[grid.total_number_of_nodes];
-    }
-    GridFunction2D (const GridFunction2D& gf)
-        : grid(gf.grid)
-    {
-        v = new double[grid.total_number_of_nodes];
-        memcpy(v, gf.v, grid.total_number_of_nodes * sizeof(double));
-    }
-    ~GridFunction2D ()
-    {
-        delete[] v;
+		v.resize(grid.total_number_of_nodes);
     }
     void set_grid (const Grid2D& _grid)
     {
         grid = _grid;
-        v = new double[grid.total_number_of_nodes];
+        v.resize(grid.total_number_of_nodes);
     }
     double& operator() (int jX, int jY, int nX, int nY)
     {

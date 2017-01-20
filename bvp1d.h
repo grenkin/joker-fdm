@@ -43,32 +43,19 @@ public:
 
 class GridFunction1D {
     Grid1D grid;
-    double* v;
+    std::vector<double> v;
 public:
     GridFunction1D ()
-        : grid(std::vector<double>(1, 0.0), std::vector<int>(1, 0))
-    {
-        v = NULL;
-    }
+        : grid(std::vector<double>(1, 0.0), std::vector<int>(1, 0)) {}
     GridFunction1D (const Grid1D& _grid)
         : grid(_grid)
     {
-		v = new double[grid.number_of_nodes];
-    }
-    GridFunction1D (const GridFunction1D& gf)
-        : grid(gf.grid)
-    {
-        v = new double[grid.number_of_nodes];
-        memcpy(v, gf.v, grid.number_of_nodes * sizeof(double));
-    }
-    ~GridFunction1D ()
-    {
-        delete[] v;
+        v.resize(grid.number_of_nodes);
     }
     void set_grid (const Grid1D& _grid)
     {
         grid = _grid;
-        v = new double[grid.number_of_nodes];
+        v.resize(grid.number_of_nodes);
     }
     double& operator() (int j, int n)
     {

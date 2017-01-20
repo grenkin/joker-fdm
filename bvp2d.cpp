@@ -9,7 +9,7 @@ inline int nindex (const Data2D& data, int i, int jX, int jY, int nX, int nY)
     return i * data.grid.total_number_of_nodes + data.grid.index(jX, jY, nX, nY);
 }
 
-VarExpr U(const Data2D& data, int i, int jX, int jY, int nX, int nY)
+VarExpr U (const Data2D& data, int i, int jX, int jY, int nX, int nY)
 {
     VarExpr ve;
     ve.num = 1;
