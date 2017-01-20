@@ -8,7 +8,7 @@ A linear problem in 2D
 -2u_y(x, 0) = -2, 1 < x < 2
 u_y(x, 1) = 1, 0 < x < 1
 2u_y(x, 1) = 2, 1 < x < 2
-u_x(1 - 0, y) = 2u_x(1 + 0, y) = 4(u(1 + 0) - u(1 - 0))
+u_x(1 - 0, y) = 2u_x(1 + 0, y) = 4(u(1 + 0, y) - u(1 - 0, y))
 Exact solution: u(x, y) = x^2 + y, 0 < x < 1
                 u(x, y) = x^2/2 + y + 1, 1 < x < 2
 */
