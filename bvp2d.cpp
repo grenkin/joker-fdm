@@ -68,8 +68,9 @@ VarExpr DifferenceOperator2D_1D (const Data2D& data, var_t var,
             n2[var] = 0;
             return 2 * data.a[i][jX][jY] / pow(data.grid.h[var][j[var]], 2)
                 * (U(data, i, jX, jY, nX, nY) - U(data, i, jX, jY, n1[VAR_X], n1[VAR_Y]))
-                + data.G[i][var][jX][jY] * (U(data, i, jX, jY, nX, nY)
-                    - U(data, i, j2[VAR_X], j2[VAR_Y], n2[VAR_X], n2[VAR_Y]));
+                + 2 * data.G[i][var][jX][jY] / data.grid.h[var][j[var]]
+                    * (U(data, i, jX, jY, nX, nY)
+                        - U(data, i, j2[VAR_X], j2[VAR_Y], n2[VAR_X], n2[VAR_Y]));
         }
     }
     else if (n[var] == 0) {
@@ -88,8 +89,9 @@ VarExpr DifferenceOperator2D_1D (const Data2D& data, var_t var,
             n2[var] = data.grid.K[var][j2[var]];
             return 2 * data.a[i][jX][jY] / pow(data.grid.h[var][j[var]], 2)
                 * (U(data, i, jX, jY, nX, nY) - U(data, i, jX, jY, n1[VAR_X], n1[VAR_Y]))
-                + data.G[i][var][j2[VAR_X]][j2[VAR_Y]] * (U(data, i, jX, jY, nX, nY)
-                    - U(data, i, j2[VAR_X], j2[VAR_Y], n2[VAR_X], n2[VAR_Y]));
+                + 2 * data.G[i][var][j2[VAR_X]][j2[VAR_Y]] / data.grid.h[var][j[var]]
+                    * (U(data, i, jX, jY, nX, nY)
+                        - U(data, i, j2[VAR_X], j2[VAR_Y], n2[VAR_X], n2[VAR_Y]));
         }
     }
     else {
