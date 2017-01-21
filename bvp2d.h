@@ -196,6 +196,12 @@ struct Parameters2D {
     }
 };
 
+struct ENotConsistentDirichletBC {
+    int i, jX, jY, nX, nY;
+    ENotConsistentDirichletBC(int _i, int _jX, int _jY, int _nX, int _nY)
+        : i(_i), jX(_jX), jY(_jY), nX(_nX), nY(_nY) {}
+};
+
 void SolveBVP2D (const Data2D&, const Parameters2D&,
     std::vector<GridFunction2D>&);
 

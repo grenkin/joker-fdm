@@ -32,13 +32,13 @@ VarExpr DifferenceOperator2D_1D (const Data2D& data, var_t var,
         std::array<int, 2> n1 = n;
         double b0, w0;
         if (n[var] == 0) {
-            // left boundary node
+            // left or bottom boundary node
             n1[var] = n[var] + 1;
             b0 = data.b[i](var, 0, j[var1], n[var1]);
             w0 = data.w[i](var, 0, j[var1], n[var1]);
         }
         else {  // n[var] == data.grid.K[var][j[var]]
-            // right boundary node
+            // right or top boundary node
             n1[var] = n[var] - 1;
             b0 = data.b[i](var, 1, j[var1], n[var1]);
             w0 = data.w[i](var, 1, j[var1], n[var1]);
@@ -106,16 +106,65 @@ VarExpr DifferenceOperator2D_1D (const Data2D& data, var_t var,
     }
 }
 
+bool equal(double a, double b)
+{
+    return abs(a - b) < 1e-12;
+}
+
+bool is_Dirichlet (const Data2D& data, int i, int jX, int jY, int nX, int nY, double& w0)
+{
+    // Note: equal nodes in conjugation conditions are not checked
+    std::array<int, 2> j = {jX, jY}, n = {nX, nY};
+    bool w0_set = false;
+    for (int var_index = 0; var_index < 2; ++var_index) {
+        var_t var = (var_t)var_index;
+        if (j[var] == 0 && n[var] == 0 || j[var] == data.grid.M[var] - 1
+            && n[var] == data.grid.K[var][j[var]])
+        {
+            var_t var1 = (var_t)(1 - var_index);
+            double b1, w1;
+            if (n[var] == 0) {
+                // left or bottom boundary node
+                b1 = data.b[i](var, 0, j[var1], n[var1]);
+                w1 = data.w[i](var, 0, j[var1], n[var1]);
+            }
+            else {  // n[var] == data.grid.K[var][j[var]]
+                // right or top boundary node
+                b1 = data.b[i](var, 1, j[var1], n[var1]);
+                w1 = data.w[i](var, 1, j[var1], n[var1]);
+            }
+            if (std::isinf(b1)) {
+                if (w0_set) {
+                    if (!equal(w0, w1))
+                        throw ENotConsistentDirichletBC(i, jX, jY, nX, nY);
+                }
+                else {
+                    w0 = w1;
+                    w0_set = true;
+                }
+            }
+        }
+    }
+    return w0_set;
+}
+
 VarExpr DifferenceOperator2D (const Data2D& data, int i, int jX, int jY, int nX, int nY)
 {
-    // TODO: Dirichlet BC
-    return DifferenceOperator2D_1D(data, VAR_X, i, jX, jY, nX, nY)
-        + DifferenceOperator2D_1D(data, VAR_Y, i, jX, jY, nX, nY);
+    double w0;
+    if (is_Dirichlet(data, i, jX, jY, nX, nY, w0))
+        return U(data, i, jX, jY, nX, nY) - w0;
+    else {
+        return DifferenceOperator2D_1D(data, VAR_X, i, jX, jY, nX, nY)
+            + DifferenceOperator2D_1D(data, VAR_Y, i, jX, jY, nX, nY);
+    }
 }
 
 VarExpr NonlinearOperator2D (const Data2D& data, int i, int jX, int jY,
     int nX, int nY, const mtl::dense_vector<double>& x_old)
 {
+    double w0;
+    if (is_Dirichlet(data, i, jX, jY, nX, nY, w0))
+        return 0;
     VarExpr ve = - data.g[i](jX, jY, nX, nY);
     for (int k = 0; k < data.N; ++k) {
         int ind = nindex(data, k, jX, jY, nX, nY);
