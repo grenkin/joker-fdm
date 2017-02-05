@@ -1,0 +1,111 @@
+// FreeFem++ code
+// Calculation without reflection and refraction
+
+real Tmax = 773;
+real StBol = 5.67e-8;
+
+// 1 - glass, 2 - air
+real a1 = 1.2;
+real beta1 = 100;
+real kappa1 = 100;
+real alpha1 = 1 / (3 * kappa1);
+real n1 = 1.47;
+real b1 = 4 * StBol * Tmax ^ 3 * beta1 * n1 ^ 2;
+
+real a2 = 0.0515;
+real beta2 = 1;
+real kappa2 = 10;
+real alpha2 = 1 / (3 * kappa2);
+real n2 = 1;
+real b2 = 4 * StBol * Tmax ^ 3 * beta2 * n2 ^ 2;
+
+real c = 10;
+real gamma = 0.3;
+
+real L = 0.25;
+real d = 0.1;
+real d1 = 0.1;
+real d2 = 0.1;
+
+border e1(t = 0, 1) { x = L * t; y = 0; label = 1; }
+border e2(t = 0, 1) { x = L; y = L * t; label = 1; }
+border e3(t = 0, 1) { x = L * (1 - t); y = L; label = 1; }
+border e4(t = 0, 1) { x = 0; y = L * (1 - t); label = 1; }
+border i1(t = 0, 1) { x = d1 + d * t; y = d2; label = 2; }
+border i2(t = 0, 1) { x = d1 + d; y = d2 + d * t; label = 2; }
+border i3(t = 0, 1) { x = d1 + d * (1 - t); y = d2 + d; label = 2; }
+border i4(t = 0, 1) { x = d1; y = d2 + d * (1 - t); label = 2; }
+
+int N1 = 400, N2 = 200;
+mesh Th = buildmesh(e1(N1) + e2(N1) + e3(N1) + e4(N1) + i1(N2) + i2(N2) + i3(N2) + i4(N2));
+// plot(Th);
+
+fespace Ph(Th, P0);
+Ph reg = region;
+//plot(reg, fill = 1, wait = 1, value = 1);
+
+func real thetabfunc (real x1, real y1)
+{
+	if (x1 == 0 || x1 == L)
+		return 0.5 + 0.5 * y1 / L;
+	else if (y1 == 0)
+		return 0.5;
+	else if (y1 == L)
+		return 1;
+	else {
+		cout << "\nx1 = " << x1 << "  y1 = " << y1 << "\n";
+		assert(0);	
+	}
+}
+
+func thetab = thetabfunc(x, y);
+
+int ereg = reg(d1 / 2, d2 / 2);
+int ireg = reg(d1 + d / 2, d2 + d / 2);
+
+Ph n2alpha = n1 ^ 2 * alpha1 * (region == ereg) + n2 ^ 2 * alpha2 * (region == ireg);
+Ph n2beta = n1 ^ 2 * beta1 * (region == ereg) + n2 ^ 2 * beta2 * (region == ireg);
+Ph a = a1 * (region == ereg) + a2 * (region == ireg);
+Ph b = b1 * (region == ereg) + b2 * (region == ireg);
+
+macro Grad(w) [dx(w), dy(w)] //
+fespace Vh(Th, P1);
+Vh phi, theta, v, w, theta0 = 0;
+
+//Apply Newton's method
+int numiter = 50;
+for (int iter = 1; iter <= numiter; iter++) {
+  solve CalcSol([phi, theta], [v, w]) =
+      int2d(Th)(n2alpha * Grad(phi)' * Grad(v))
+    + int2d(Th)(n2beta * phi * v)
+    - int2d(Th)(n2beta * 4 * theta0 ^ 3 * theta * v)
+    + int2d(Th)(n2beta * 3 * theta0 ^ 4 * v)
+    + int1d(Th, 1)(gamma * n1 ^ 2 * phi * v)
+    - int1d(Th, 1)(gamma * n1 ^ 2 * thetab ^ 4 * v)
+    //...
+    + int2d(Th)(a * Grad(theta)' * Grad(w))
+    - int2d(Th)(b * phi * w)
+    + int2d(Th)(b * 4 * theta0 ^ 3 * theta * w)
+    - int2d(Th)(b * 3 * theta0 ^ 4 * w)
+    + int1d(Th, 1)(c * theta * w)
+    - int1d(Th, 1)(c * thetab * w);
+
+  Vh tmp = theta - theta0;
+  if (tmp[].max - tmp[].min < 1e-9)
+	break;
+  theta0 = theta;
+}
+
+ofstream fout("output_ff.txt");
+int plotsize = 500;
+for (int i = 0; i <= plotsize; i++) {
+	for (int j = 0; j <= plotsize; j++) {
+		real xi = L * i / plotsize;
+		real yi = L * j / plotsize;
+		fout << xi << "  " << yi << "  " << phi(xi, yi) << "  " << theta(xi, yi) << endl;
+	}
+	fout << endl;
+}
+
+plot(theta, fill = 1, wait = 1, value = 1);
+plot(phi, fill = 1, wait = 1, value = 1);
