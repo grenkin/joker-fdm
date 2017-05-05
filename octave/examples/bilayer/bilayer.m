@@ -1,8 +1,8 @@
 # The same problem as at https://github.com/grenkin/bilayer-fdm
 
-clear all;
-more off;
-format long;
+clear all
+more off
+format long
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Physical data for two layers
@@ -33,28 +33,10 @@ boundary_data(2) = struct(
   "thetab", 0.5);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Calculation of normalized model parameters
+%% Calculation of model parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function retval = gamma_func (emiss)
-  retval = emiss / ( 2 * (2 - emiss) );
-endfunction
-
-function retval = calc_layer (l)
-  alpha = 1 / (3 - l.A * l.omega);
-  D = l.n ^ 2 * alpha;
-  retval.B = D / l.L;
-  retval.C = l.Nc * l.n ^ 2 / l.L;
-  retval.K = l.L * l.n ^ 2 * (1 - l.omega);
-  retval.L = l.L;
-endfunction
-
-function retval = calc_boundary (b)
-  emiss = 1 - b.R;
-  gam = gamma_func(emiss);
-  retval.tilde_gamma = b.n ^ 2 * gam;
-  retval.thetab = b.thetab;
-endfunction
+param_func
 
 for j = 1 : 2
   boundary_data(j).n = layer_data(j).n;
@@ -98,10 +80,13 @@ guess = [ boundary(1).thetab + ...
   (boundary(2).thetab - boundary(1).thetab) * (0 : (grid_info.nodes - 1)) / ...
   (grid_info.nodes - 1) ; zeros(1, grid_info.nodes) ];
 tol = 1e-6;
+
+# Calculate with taking into account refraction and reflection
 sol = solve_bvp1d(grid_info, data, guess, tol);
 theta = sol(1, :);
 phi = sol(2, :);
 
+# Calculate without taking into account refraction and reflection
 data.G = [ Inf ; Inf ];
 sol1 = solve_bvp1d(grid_info, data, guess, tol);
 theta1 = sol1(1, :);

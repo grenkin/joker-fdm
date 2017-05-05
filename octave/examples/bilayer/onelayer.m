@@ -21,28 +21,10 @@ boundary_data(2) = struct(
   "thetab", 0.5);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Calculation of normalized model parameters
+%% Calculation of model parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function retval = gamma_func (emiss)
-  retval = emiss / ( 2 * (2 - emiss) );
-endfunction
-
-function retval = calc_layer (l)
-  alpha = 1 / (3 - l.A * l.omega);
-  D = l.n ^ 2 * alpha;
-  retval.B = D / l.L;
-  retval.C = l.Nc * l.n ^ 2 / l.L;
-  retval.K = l.L * l.n ^ 2 * (1 - l.omega);
-  retval.L = l.L;
-endfunction
-
-function retval = calc_boundary (b)
-  emiss = 1 - b.R;
-  gam = gamma_func(emiss);
-  retval.tilde_gamma = b.n ^ 2 * gam;
-  retval.thetab = b.thetab;
-endfunction
+param_func
 
 layer(1) = calc_layer(layer_data(1));
 for j = 1 : 2
