@@ -105,8 +105,20 @@ xgrid1 = (0 : K(1)) * grid_info.h(1);
 xgrid2 = L(1) + (0 : K(2)) * grid_info.h(2);
 xgrid = [xgrid1, xgrid2];
 
+# Print the solution value at i-th grid node or not
+function ret = to_print (i)
+  if (i <= 101)
+    ret = i >= 96 || rem(i, 5) == 1;
+  else
+    ret = i <= 107 || rem(i, 5) == 2;
+  endif
+endfunction
+
 ftheta = fopen("theta.txt", "wt");
 for i = 1 : length(xgrid)
+  if (!to_print(i))
+    continue;
+  endif
   fprintf(ftheta, "%.12f %.12f\n", xgrid(i), theta(i));
   if (i == length(xgrid1))
     fprintf(ftheta, "\n\n\n");
@@ -116,6 +128,9 @@ fclose(ftheta);
 
 fphi = fopen("phi.txt", "wt");
 for i = 1 : length(xgrid)
+  if (!to_print(i))
+    continue;
+  endif
   fprintf(fphi, "%.12f %.12f\n", xgrid(i), phi(i));
   if (i == length(xgrid1))
     fprintf(fphi, "\n\n\n");
