@@ -1,5 +1,7 @@
-#include <boost/numeric/mtl/mtl.hpp>
-#include <boost/numeric/itl/itl.hpp>
+#include <mtl/matrix.h>
+#include <itl/preconditioner/ilu.h>
+#include <itl/interface/mtl.h>
+#include <itl/krylov/bicgstab.h>
 #include <cmath>
 #include "bvp2d.h"
 #include "var_expr.h"
@@ -160,7 +162,7 @@ VarExpr DifferenceOperator2D (const Data2D& data, int i, int jX, int jY, int nX,
 }
 
 VarExpr NonlinearOperator2D (const Data2D& data, int i, int jX, int jY,
-    int nX, int nY, const mtl::dense_vector<double>& x_old)
+    int nX, int nY, const mtl::dense1D<double>& x_old)
 {
     double w0;
     if (is_Dirichlet(data, i, jX, jY, nX, nY, w0))
@@ -178,9 +180,10 @@ void SolveBVP2D (const Data2D& data, const Parameters2D& param,
     std::vector<GridFunction2D>& sol)
 {
     int unknowns = data.N * data.grid.total_number_of_nodes;
-    mtl::compressed2D<double> A(unknowns, unknowns);
-    mtl::dense_vector<double> b(unknowns), x(unknowns), x_old(unknowns);
-    int elements_per_row = 4 + data.N;  // parameter of the inserter
+    typedef mtl::matrix<double, mtl::rectangle<>,
+        mtl::array<mtl::compressed<> >, mtl::row_major>::type Matrix;
+    Matrix A(unknowns, unknowns);
+    mtl::dense1D<double> b(unknowns), x(unknowns), x_old(unknowns);
     // Set the initial guess
     for (int i = 0; i < data.N; ++i) {
         for (int jX = 0; jX < data.grid.M[VAR_X]; ++jX) {
@@ -194,37 +197,41 @@ void SolveBVP2D (const Data2D& data, const Parameters2D& param,
     }
     // Apply Newton's method
     int num_iterations = 0;
+    double max_diff;
     do {
-        A = 0;
-        x_old = x;
-        {  // additional block for applying the inserter
-            mtl::mat::inserter<mtl::compressed2D<double>,
-                mtl::update_plus<double> > ins(A, elements_per_row);
-            for (int i = 0; i < data.N; ++i) {
-                for (int jX = 0; jX < data.grid.M[VAR_X]; ++jX) {
-                    for (int nX = 0; nX <= data.grid.K[VAR_X][jX]; ++nX) {
-                        for (int jY = 0; jY < data.grid.M[VAR_Y]; ++jY) {
-                            for (int nY = 0; nY <= data.grid.K[VAR_Y][jY]; ++nY) {
-                                VarExpr ve = DifferenceOperator2D(data, i, jX, jY, nX, nY)
-                                    + NonlinearOperator2D(data, i, jX, jY, nX, nY, x_old);
-                                int row = nindex(data, i, jX, jY, nX, nY);
-                                b[row] = ve.rhs;
-                                for (int s = 0; s < ve.num; ++s)
-                                    ins(row, ve.ind[s]) << ve.val[s];
-                            }
+        for (int i = 0; i < unknowns; ++i)
+            x_old[i] = x[i];
+        for (int i = 0; i < data.N; ++i) {
+            for (int jX = 0; jX < data.grid.M[VAR_X]; ++jX) {
+                for (int nX = 0; nX <= data.grid.K[VAR_X][jX]; ++nX) {
+                    for (int jY = 0; jY < data.grid.M[VAR_Y]; ++jY) {
+                        for (int nY = 0; nY <= data.grid.K[VAR_Y][jY]; ++nY) {
+                            VarExpr ve = DifferenceOperator2D(data, i, jX, jY, nX, nY)
+                                + NonlinearOperator2D(data, i, jX, jY, nX, nY, x_old);
+                            int row = nindex(data, i, jX, jY, nX, nY);
+                            b[row] = ve.rhs;
+                            for (int s = 0; s < ve.num; ++s)
+                                A(row, ve.ind[s]) = 0.0;
+                            for (int s = 0; s < ve.num; ++s)
+                                A(row, ve.ind[s]) += ve.val[s];
                         }
                     }
                 }
             }
         }
         // Solve the linear system
-        itl::pc::ilu_0<mtl::compressed2D<double> > P(A);
+        itl::ILU<Matrix> precond(A);
         itl::basic_iteration<double> iter(b, param.max_linear_sys_iterations,
             param.linear_sys_tol);
         // x is equal to the previous guess
-        bicgstab(A, x, b, P, iter);
+        bicgstab(A, x, b, precond(), iter);
+        if (iter.error_code())
+            throw;
         ++num_iterations;
-    } while (!(mtl::infinity_norm(x - x_old) < param.Newton_tol ||
+        max_diff = 0.0;
+        for (int i = 0; i < unknowns; ++i)
+            max_diff = fmax(max_diff, fabs(x[i] - x_old[i]));
+    } while (!(max_diff < param.Newton_tol ||
         num_iterations >= param.max_Newton_iterations));
     // Set the solution
     for (int i = 0; i < data.N; ++i) {
