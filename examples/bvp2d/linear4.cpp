@@ -95,7 +95,7 @@ int main() {
             }
         }
         for (int nX = 0; nX <= grid.K[VAR_X][0]; ++nX) {
-            for (int nY = 0; nY <= grid.K[VAR_X][1]; ++nY) {
+            for (int nY = 0; nY <= grid.K[VAR_Y][1]; ++nY) {
                 rms += pow(sol[0](0, 1, nX, nY) - exact2(
                     grid.coordX(0, nX), grid.coordY(1, nY)), 2);
             }
