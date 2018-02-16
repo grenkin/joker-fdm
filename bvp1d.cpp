@@ -90,7 +90,7 @@ VarExpr DifferenceOperator1D (const Data1D& data, int i, int j, int n)
 VarExpr get_nonlinear_term (const Data1D& data, int i, int j, int n,
     const mtl::dense_vector<double>& x_old)
 {
-    VarExpr ve = - data.g[i](j, n);
+    VarExpr ve = data.c[i] * U(data, i, j, n) - data.g[i](j, n);
     for (int k = 0; k < data.N; ++k) {
         int ind = nindex(data, k, j, n);
         ve += data.f[i][j][k](x_old[ind]) +

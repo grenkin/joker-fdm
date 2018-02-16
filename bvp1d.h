@@ -77,6 +77,7 @@ struct Data1D {
     std::vector<std::array<double, 2> > b, w;  // coefficients in boundary conditions
     std::vector<std::vector<std::vector<NonlinearFunction> > > f, df;  // nonlinear terms functions
     std::vector<GridFunction1D> g;  // right-hand sides
+    std::vector<double> c;  // additional coefficients in the reaction terms
     Data1D (int _N, const Grid1D& _grid)
         : grid(_grid), N(_N)
     {
@@ -99,6 +100,7 @@ struct Data1D {
         g.resize(N);
         for (int i = 0; i < N; ++i)
             g[i].set_grid(grid);
+        c.resize(N, 0.0);
     }
 };
 
@@ -116,5 +118,29 @@ struct Parameters1D {
 
 void SolveBVP1D (const Data1D&, const Parameters1D&,
     std::vector<GridFunction1D>&);
+
+class TimeGridFunction1D {
+    Grid1D grid;
+    int tnum;
+    std::vector<double> v;
+public:
+    TimeGridFunction1D ()
+        : grid(std::vector<double>(1, 0.0), std::vector<int>(1, 0)), tnum(0) {}
+    TimeGridFunction1D (const Grid1D& _grid, int _tnum)
+        : grid(_grid), tnum(_tnum)
+    {
+        v.resize(grid.number_of_nodes * (tnum + 1));
+    }
+    void set_grid (const Grid1D& _grid, int _tnum)
+    {
+        grid = _grid;
+        tnum = _tnum;
+        v.resize(grid.number_of_nodes * (tnum + 1));
+    }
+    double& operator() (int m, int j, int n)
+    {
+        return v[grid.number_of_nodes * m + grid.index(j, n)];
+    }
+};
 
 #endif // BVP_1D_H_INCLUDED
