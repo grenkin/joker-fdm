@@ -104,11 +104,15 @@ struct Data1D {
     }
 };
 
+enum SolutionMethod { SOL_METHOD_MTL, SOL_METHOD_UMFPACK };
+
 struct Parameters1D {
+    SolutionMethod sol_method;
     double Newton_tol, linear_sys_tol;
     int max_Newton_iterations, max_linear_sys_iterations;
     Parameters1D ()
     {
+        sol_method = SOL_METHOD_MTL;
         Newton_tol = 1e-8;  // absolute error in Newton's method
         max_Newton_iterations = 100;  // maximal number of iterations of Newton's method
         linear_sys_tol = 1e-7;  // relative error in the linear system solver

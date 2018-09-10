@@ -193,11 +193,21 @@ void SolveBVP1D (const Data1D& data, const Parameters1D& param,
             }
         }
         // Solve the linear system
-        itl::pc::ilu_0<mtl::compressed2D<double> > P(A);
-        itl::basic_iteration<double> iter(b, param.max_linear_sys_iterations,
-            param.linear_sys_tol);
-        // x is equal to the previous guess
-        bicgstab(A, x, b, P, iter);
+        if (param.sol_method == SOL_METHOD_MTL) {
+            itl::pc::ilu_0<mtl::compressed2D<double> > P(A);
+            itl::basic_iteration<double> iter(b, param.max_linear_sys_iterations,
+                param.linear_sys_tol);
+            // x is equal to the previous guess
+            bicgstab(A, x, b, P, iter);
+        }
+        else {  // sol_method == SOL_METHOD_UMFPACK
+            #ifdef MTL_HAS_UMFPACK
+                umfpack_solve(A, x, b);
+            #else
+                std::cerr << "UMFPACK library is needed!" << std::endl;
+                throw;
+            #endif // MTL_HAS_UMFPACK
+        }
         ++num_iterations;
     } while (!(mtl::infinity_norm(x - x_old) < param.Newton_tol ||
         num_iterations >= param.max_Newton_iterations));
