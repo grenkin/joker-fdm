@@ -87,6 +87,53 @@ VarExpr DifferenceOperator1D (const Data1D& data, int i, int j, int n)
     }
 }
 
+double DifferenceOperatorValue1D (const Data1D& data,
+    const std::vector<GridFunction1D>& u, int i, int j, int n)
+{
+    int M = data.grid.M;
+    if (j == 0 && n == 0 || j == M - 1 && n == data.grid.K[j]) {
+        // boundary node
+        int n1;
+        double b0, w0;
+        if (n == 0) {
+            // left boundary node
+            n1 = n + 1;
+            b0 = data.b[i][0];
+            w0 = data.w[i][0];
+        }
+        else {  // n == data.grid.K[M - 1]
+            // right boundary node
+            n1 = n - 1;
+            b0 = data.b[i][1];
+            w0 = data.w[i][1];
+        }
+        if (std::isinf(b0)) {
+            // Dirichlet BC
+            return 0.0;
+        }
+        else {
+            // Neumann or Robin BC
+            return data.a[i][j] / data.grid.h[j] * (u[i](j, n) - u[i](j, n1))
+                + b0 * u[i](j, n) - w0;
+        }
+    }
+    else if (n == data.grid.K[j]) {
+        // rightmost node of the j-th domain
+        // TODO
+        throw;
+    }
+    else if (n == 0) {
+        // leftmost node of the j-th domain
+        // TODO
+        throw;
+    }
+    else {
+        // internal node
+        return - data.a[i][j] / pow(data.grid.h[j], 2)
+            * (u[i](j, n - 1) - 2 * u[i](j, n) + u[i](j, n + 1));
+    }
+}
+
 VarExpr get_nonlinear_term (const Data1D& data, int i, int j, int n,
     const mtl::dense_vector<double>& x_old)
 {
@@ -97,6 +144,15 @@ VarExpr get_nonlinear_term (const Data1D& data, int i, int j, int n,
             data.df[i][j][k](x_old[ind]) * (U(data, k, j, n) - x_old[ind]);
     }
     return ve;
+}
+
+double get_nonlinear_term_value (const Data1D& data,
+    const std::vector<GridFunction1D>& u, int i, int j, int n)
+{
+    double ans = data.c[i] * u[i](j, n) - data.g[i](j, n);
+    for (int k = 0; k < data.N; ++k)
+        ans += data.f[i][j][k](u[k](j, n));
+    return ans;
 }
 
 VarExpr NonlinearOperator1D (const Data1D& data, int i, int j, int n,
@@ -154,6 +210,47 @@ VarExpr NonlinearOperator1D (const Data1D& data, int i, int j, int n,
     else {
         // internal node
         return get_nonlinear_term(data, i, j, n, x_old);
+    }
+}
+
+double NonlinearOperatorValue1D (const Data1D& data,
+    const std::vector<GridFunction1D>& u, int i, int j, int n)
+{
+    int M = data.grid.M;
+    if (j == 0 && n == 0 || j == M - 1 && n == data.grid.K[j]) {
+        // boundary node
+        double b0;
+        if (n == 0) {
+            // left boundary node
+            b0 = data.b[i][0];
+        }
+        else {  // n == data.grid.K[M - 1]
+            // right boundary node
+            b0 = data.b[i][1];
+        }
+        if (std::isinf(b0)) {
+            // Dirichlet BC
+            return 0.0;
+        }
+        else {
+            // Neumann or Robin BC
+            return data.grid.h[j] / 2
+                * get_nonlinear_term_value(data, u, i, j, n);
+        }
+    }
+    else if (n == data.grid.K[j]) {
+        // rightmost node of the j-th domain
+        // TODO
+        throw;
+    }
+    else if (n == 0) {
+        // leftmost node of the j-th domain
+        // TODO
+        throw;
+    }
+    else {
+        // internal node
+        return get_nonlinear_term_value(data, u, i, j, n);
     }
 }
 
@@ -218,4 +315,11 @@ void SolveBVP1D (const Data1D& data, const Parameters1D& param,
                 sol[i](j, n) = x[nindex(data, i, j, n)];
         }
     }
+}
+
+double OperatorValue1D (const Data1D& data,
+    const std::vector<GridFunction1D>& u, int i, int j, int n)
+{
+    return DifferenceOperatorValue1D(data, u, i, j, n)
+        + NonlinearOperatorValue1D(data, u, i, j, n);
 }

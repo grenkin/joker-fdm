@@ -123,6 +123,10 @@ struct Parameters1D {
 void SolveBVP1D (const Data1D&, const Parameters1D&,
     std::vector<GridFunction1D>&);
 
+// calculate the value of the operator Au = (D + N)u
+double OperatorValue1D (const Data1D& data,
+    const std::vector<GridFunction1D>& u, int i, int j, int n);
+
 class TimeGridFunction1D {
     Grid1D grid;
     int tnum;
