@@ -77,11 +77,12 @@ int main ()
             double t = m * tau;
             for (int n = 0; n <= K0; ++n)
                 data.g[0](0, n) = 0.0;
+            data.c[0] = - data.c[0];
             // Note: OperatorValue1D() depends on data.g and data.w
             for (int n = 0; n <= K0; ++n) {
-                data.g[0](0, n) = 2 * data.c[0] * sol[0](0, n)
-                    - OperatorValue1D(data, sol, 0, 0, n);
+                data.g[0](0, n) = - OperatorValue1D(data, sol, 0, 0, n);
             }
+            data.c[0] = - data.c[0];
             // assignment to data.w should be after calling OperatorValue1D()
             data.w[0][0] = - 1 / (2 * pi) * exp(- t);
             Parameters1D param;

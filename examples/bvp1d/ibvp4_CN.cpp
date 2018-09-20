@@ -85,11 +85,13 @@ int main ()
                 double x = grid.coord(0, n);
                 data.g[0](0, n) = gfun(x, t_prev);
             }
+            data.c[0] = - data.c[0];
             for (int n = 0; n <= K0; ++n) {
                 double x = grid.coord(0, n);
-                data.g[0](0, n) = gfun(x, t) + 2 * data.c[0] * sol[0](0, n)
+                data.g[0](0, n) = gfun(x, t)
                     - OperatorValue1D(data, sol, 0, 0, n);
             }
+            data.c[0] = - data.c[0];
             data.w[0][0] = w1fun(t);
             data.w[0][1] = w2fun(t);
             Parameters1D param;
