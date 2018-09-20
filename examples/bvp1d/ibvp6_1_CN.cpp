@@ -2,11 +2,13 @@
 An initial-boundary value problem in 1D
 3u_t - u_xx + 2v = 2,  2v_t - 4v_xx + 10v - 12u = 10,  x \in (0, pi)
 -u_x(0, t) + 2u(0, t) = -exp(-t)
-u(pi, t) = 0
--4v_x(0, t) + 3v(0, t) = -4exp(-t) + 3
-4v_x(pi, t) + v(pi, t) = -4exp(-t) + 1
+u(0, t) = 0,  u(pi, t) = 0
+v(0, t) = 1,  v(pi, t) = 1
 u(x, 0) = sin(x),  v(x, 0) = sin(x) + 1
 Exact solution: u(x, t) = exp(-t)*sin(x), v(x, t) = exp(-t)*sin(x) + 1
+
+Crank-Nicolson scheme is used:
+2 u^m / tau + Au^m = g^{m-1} + g^m + 2 u^{m-1} / tau - Au^{m-1}
 */
 
 #include <iostream>
@@ -53,21 +55,6 @@ double minus_twelve (double x)
     return -12;
 }
 
-double w00fun (double t)
-{
-    return - exp(-t);
-}
-
-double w10fun (double t)
-{
-    return -4 * exp(-t) + 3;
-}
-
-double w11fun (double t)
-{
-    return -4 * exp(-t) + 1;
-}
-
 double gfun1 (double x, double t)
 {
     return 2;
@@ -98,7 +85,8 @@ double exact2 (double x, double t)
     return exp(-t) * sin(x) + 1;
 }
 
-int main() {
+int main ()
+{
     double L0 = pi;
     double T = 10;
     int K0 = 10;
@@ -111,10 +99,10 @@ int main() {
         Data1D data(2, grid);
         data.a[0][0] = 1;
         data.a[1][0] = 4;
-        data.b[0][0] = 2;  // data.w[0][0] will be defined later
+        data.b[0][0] = INFINITY;  data.w[0][0] = 0;
         data.b[0][1] = INFINITY;  data.w[0][1] = 0;
-        data.b[1][0] = 3;  // data.w[1][0] will be defined later
-        data.b[1][1] = 1;  // data.w[1][1] will be defined later
+        data.b[1][0] = INFINITY;  data.w[1][0] = 1;
+        data.b[1][1] = INFINITY;  data.w[1][1] = 1;
         data.f[0][0][0] = data.df[0][0][0] = zero;
         data.f[0][0][1] = two_ident;  data.df[0][0][1] = two;
         data.f[1][0][0] = minus_twelve_ident;  data.df[1][0][0] = minus_twelve;
@@ -123,7 +111,7 @@ int main() {
         c[0] = 3;  c[1] = 2;
         double tau = T / tnum;
         for (int i = 0; i < 2; ++i)
-            data.c[i] = c[i] / tau;
+            data.c[i] = 2 * c[i] / tau;
         vector<GridFunction1D> sol(2);
         vector<TimeGridFunction1D> res(2);
         for (int i = 0; i < 2; ++i) {
@@ -140,15 +128,18 @@ int main() {
         }
 
         for (int m = 1; m <= tnum; ++m) {
-            double t = m * tau;
-            data.w[0][0] = w00fun(t);
-            data.w[1][0] = w10fun(t);
-            data.w[1][1] = w11fun(t);
+            double t = m * tau, t_prev = (m - 1) * tau;
             for (int n = 0; n <= K0; ++n) {
-                data.g[0](0, n) = gfun1(grid.coord(0, n), t)
-                    + c[0] / tau * sol[0](0, n);
-                data.g[1](0, n) = gfun2(grid.coord(0, n), t)
-                    + c[1] / tau * sol[1](0, n);
+                double x = grid.coord(0, n);
+                data.g[0](0, n) = gfun1(x, t_prev);
+                data.g[1](0, n) = gfun2(x, t_prev);
+            }
+            for (int n = 0; n <= K0; ++n) {
+                double x = grid.coord(0, n);
+                data.g[0](0, n) = gfun1(x, t) + 2 * data.c[0] * sol[0](0, n)
+                    - OperatorValue1D(data, sol, 0, 0, n);
+                data.g[1](0, n) = gfun2(x, t) + 2 * data.c[1] * sol[1](0, n)
+                    - OperatorValue1D(data, sol, 1, 0, n);
             }
             Parameters1D param;
             param.max_Newton_iterations = 1;
@@ -174,7 +165,7 @@ int main() {
             cout << "rms_old / rms = " << rms_old / rms << "\n\n";
         rms_old = rms;
         K0 *= 2;
-        tnum *= 4;
+        tnum *= 2;
     }
 
     return 0;
