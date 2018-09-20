@@ -134,13 +134,17 @@ int main ()
                 data.g[0](0, n) = gfun1(x, t_prev);
                 data.g[1](0, n) = gfun2(x, t_prev);
             }
+            for (int i = 0; i < 2; ++i)
+                data.c[i] = - data.c[i];
             for (int n = 0; n <= K0; ++n) {
                 double x = grid.coord(0, n);
-                data.g[0](0, n) = gfun1(x, t) + 2 * data.c[0] * sol[0](0, n)
+                data.g[0](0, n) = gfun1(x, t)
                     - OperatorValue1D(data, sol, 0, 0, n);
-                data.g[1](0, n) = gfun2(x, t) + 2 * data.c[1] * sol[1](0, n)
+                data.g[1](0, n) = gfun2(x, t)
                     - OperatorValue1D(data, sol, 1, 0, n);
             }
+            for (int i = 0; i < 2; ++i)
+                data.c[i] = - data.c[i];
             Parameters1D param;
             param.max_Newton_iterations = 1;
             SolveBVP1D(data, param, sol);
