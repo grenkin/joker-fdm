@@ -44,15 +44,19 @@ VarExpr DifferenceOperator1D (const Data1D& data, int i, int j, int n)
         }
         else {
             // Neumann or Robin BC
-            return data.a[i][j] / data.grid.h[j] *
-                    (U(data, i, j, n) - U(data, i, j, n1))
-                + b0 * U(data, i, j, n) - w0;
+            return 2 * data.a[i][j] / pow(data.grid.h[j], 2)
+                * (U(data, i, j, n) - U(data, i, j, n1))
+                + 2 / data.grid.h[j] * (b0 * U(data, i, j, n) - w0);
         }
     }
     else if (n == data.grid.K[j]) {
         // rightmost node of the j-th domain
         if (std::isinf(data.G[i][j])) {
             // perfect contact conjugation conditions
+
+            // TODO: take into account the last changes
+            throw;
+
             return data.a[i][j] / data.grid.h[j] *
                     (U(data, i, j, n) - U(data, i, j, n - 1))
                 + data.a[i][j + 1] / data.grid.h[j + 1] *
@@ -60,23 +64,28 @@ VarExpr DifferenceOperator1D (const Data1D& data, int i, int j, int n)
         }
         else {
             // imperfect contact conjugation conditions
-            return data.a[i][j] / data.grid.h[j] *
-                    (U(data, i, j, n) - U(data, i, j, n - 1))
-                + data.G[i][j] * (U(data, i, j, n) - U(data, i, j + 1, 0));
+            return 2 * data.a[i][j] / pow(data.grid.h[j], 2)
+                * (U(data, i, j, n) - U(data, i, j, n - 1))
+                + 2 * data.G[i][j] / data.grid.h[j]
+                * (U(data, i, j, n) - U(data, i, j + 1, 0));
         }
     }
     else if (n == 0) {
         // leftmost node of the j-th domain
         if (std::isinf(data.G[i][j - 1])) {
             // perfect contact conjugation conditions
+
+            // TODO: take into account the last changes
+            throw;
+
             return U(data, i, j, n) - U(data, i, j - 1, data.grid.K[j - 1]);
         }
         else {
             // imperfect contact conjugation conditions
-            return data.a[i][j] / data.grid.h[j]
-                    * (U(data, i, j, n) - U(data, i, j, n + 1))
-                + data.G[i][j - 1]
-                    * (U(data, i, j, n) - U(data, i, j - 1, data.grid.K[j - 1]));
+            return 2 * data.a[i][j] / pow(data.grid.h[j], 2)
+                * (U(data, i, j, n) - U(data, i, j, n + 1))
+                + 2 * data.G[i][j - 1] / data.grid.h[j]
+                * (U(data, i, j, n) - U(data, i, j - 1, data.grid.K[j - 1]));
         }
     }
     else {
@@ -113,8 +122,9 @@ double DifferenceOperatorValue1D (const Data1D& data,
         }
         else {
             // Neumann or Robin BC
-            return data.a[i][j] / data.grid.h[j] * (u[i](j, n) - u[i](j, n1))
-                + b0 * u[i](j, n) - w0;
+            return 2 * data.a[i][j] / pow(data.grid.h[j], 2)
+                * (u[i](j, n) - u[i](j, n1))
+                + 2 / data.grid.h[j] * (b0 * u[i](j, n) - w0);
         }
     }
     else if (n == data.grid.K[j]) {
@@ -155,8 +165,7 @@ double get_nonlinear_term_value (const Data1D& data,
     return ans;
 }
 
-VarExpr NonlinearOperator1D (const Data1D& data, int i, int j, int n,
-    const mtl::dense_vector<double>& x_old)
+bool is_Dirichlet (const Data1D& data, int i, int j, int n)
 {
     int M = data.grid.M;
     if (j == 0 && n == 0 || j == M - 1 && n == data.grid.K[j]) {
@@ -172,86 +181,28 @@ VarExpr NonlinearOperator1D (const Data1D& data, int i, int j, int n,
         }
         if (std::isinf(b0)) {
             // Dirichlet BC
-            return 0;
-        }
-        else {
-            // Neumann or Robin BC
-            return data.grid.h[j] / 2
-                * get_nonlinear_term(data, i, j, n, x_old);
+            return true;
         }
     }
-    else if (n == data.grid.K[j]) {
-        // rightmost node of the j-th domain
-        if (std::isinf(data.G[i][j])) {
-            // perfect contact conjugation conditions
-            return data.grid.h[j] / 2
-                    * get_nonlinear_term(data, i, j, n, x_old)
-                + data.grid.h[j + 1] / 2
-                    * get_nonlinear_term(data, i, j + 1, 0, x_old);
-        }
-        else {
-            // imperfect contact conjugation conditions
-            return data.grid.h[j] / 2
-                * get_nonlinear_term(data, i, j, n, x_old);
-        }
-    }
-    else if (n == 0) {
-        // leftmost node of the j-th domain
-        if (std::isinf(data.G[i][j - 1])) {
-            // perfect contact conjugation conditions
-            return 0;
-        }
-        else {
-            // imperfect contact conjugation conditions
-            return data.grid.h[j] / 2
-                * get_nonlinear_term(data, i, j, n, x_old);
-        }
-    }
-    else {
-        // internal node
-        return get_nonlinear_term(data, i, j, n, x_old);
-    }
+    return false;
+}
+
+VarExpr NonlinearOperator1D (const Data1D& data, int i, int j, int n,
+    const mtl::dense_vector<double>& x_old)
+{
+    if (is_Dirichlet(data, i, j, n))
+        return 0.0;
+    // TODO: also consider the cases of perfect conjugation conditions
+    return get_nonlinear_term(data, i, j, n, x_old);
 }
 
 double NonlinearOperatorValue1D (const Data1D& data,
     const std::vector<GridFunction1D>& u, int i, int j, int n)
 {
-    int M = data.grid.M;
-    if (j == 0 && n == 0 || j == M - 1 && n == data.grid.K[j]) {
-        // boundary node
-        double b0;
-        if (n == 0) {
-            // left boundary node
-            b0 = data.b[i][0];
-        }
-        else {  // n == data.grid.K[M - 1]
-            // right boundary node
-            b0 = data.b[i][1];
-        }
-        if (std::isinf(b0)) {
-            // Dirichlet BC
-            return 0.0;
-        }
-        else {
-            // Neumann or Robin BC
-            return data.grid.h[j] / 2
-                * get_nonlinear_term_value(data, u, i, j, n);
-        }
-    }
-    else if (n == data.grid.K[j]) {
-        // rightmost node of the j-th domain
-        // TODO
-        throw;
-    }
-    else if (n == 0) {
-        // leftmost node of the j-th domain
-        // TODO
-        throw;
-    }
-    else {
-        // internal node
-        return get_nonlinear_term_value(data, u, i, j, n);
-    }
+    if (is_Dirichlet(data, i, j, n))
+        return 0.0;
+    // TODO: also consider the cases of perfect conjugation conditions
+    return get_nonlinear_term_value(data, u, i, j, n);
 }
 
 void SolveBVP1D (const Data1D& data, const Parameters1D& param,
